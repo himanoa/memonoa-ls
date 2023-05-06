@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.71"
 axum = "0.6.18"
+axum-jrpc = "0.5.1"
 derive_more = "0.99.17"
 thiserror = "1.0.40"
