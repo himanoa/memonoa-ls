@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = { version = "1.0.71"}
 derive_more = "0.99.17"
+maplit = "1.0.2"
 serde = {version = "1.0.162", features = ["derive"]}
 serde_json = { version = "1.0.96", optional = true}
 thiserror = "1.0.40"

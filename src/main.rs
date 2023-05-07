@@ -1,26 +1,30 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
 
 use tokio::fs::read_dir;
-use tracing_subscriber::prelude::*;
-use tower_lsp::jsonrpc::{Result, Error, ErrorCode};
+use tokio::main;
+use tower_lsp::async_trait;
+use tower_lsp::jsonrpc::{Error, ErrorCode, Result};
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
-use tower_lsp::async_trait;
-use tokio::main;
+use tracing_subscriber::prelude::*;
 
+pub mod ast;
 mod wakachigaki;
 
 #[derive(Debug)]
 struct Backend {
     client: Client,
-    documents: Arc<Mutex<HashMap<String, PathBuf>>>
+    documents: Arc<Mutex<HashMap<String, PathBuf>>>,
 }
 
 impl Backend {
     fn new(client: Client) -> Self {
-        Backend { client, documents: Arc::new(Mutex::new(HashMap::new())) }
+        Backend {
+            client,
+            documents: Arc::new(Mutex::new(HashMap::new())),
+        }
     }
 }
 
@@ -37,11 +41,22 @@ impl LanguageServer for Backend {
         self.client
             .log_message(MessageType::INFO, "Start initialize")
             .await;
-        let mut entries = read_dir(".").await.map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let mut entries = read_dir(".")
+            .await
+            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
 
-        while let Some(entry) = entries.next_entry().await.map_err(|_| Error::new(ErrorCode::ServerError(1)))? {
-            self.client.log_message(MessageType::INFO, format!("{:?}", entry)).await;
-            let mut documents = self.documents.lock().map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        while let Some(entry) = entries
+            .next_entry()
+            .await
+            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?
+        {
+            self.client
+                .log_message(MessageType::INFO, format!("{:?}", entry))
+                .await;
+            let mut documents = self
+                .documents
+                .lock()
+                .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
             if let Some(file_name) = entry.file_name().to_str() {
                 documents.insert(file_name.to_string(), entry.path());
             }
@@ -86,9 +101,14 @@ impl LanguageServer for Backend {
         })
     }
 
-    async fn goto_definition(&self, params: GotoDefinitionParams) -> Result<Option<GotoDefinitionResponse>> {
+    async fn goto_definition(
+        &self,
+        params: GotoDefinitionParams,
+    ) -> Result<Option<GotoDefinitionResponse>> {
         self.client.log_message(MessageType::INFO, "hello").await;
-        self.client.log_message(MessageType::INFO, format!("{:?}", params)).await;
+        self.client
+            .log_message(MessageType::INFO, format!("{:?}", params))
+            .await;
         Ok(None)
     }
 
