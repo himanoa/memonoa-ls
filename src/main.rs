@@ -12,6 +12,7 @@ use tracing_subscriber::prelude::*;
 
 pub mod ast;
 mod wakachigaki;
+pub mod range;
 
 #[derive(Debug)]
 struct Backend {
