@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@types/node": "20.1.0",
+    "@types/vscode": "1.78.0",
+    "typescript": "5.0.4",
+    "vscode-test": "1.6.1"
+  }
+}
