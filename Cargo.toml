@@ -11,6 +11,7 @@ derive_more = "0.99.17"
 serde = {version = "1.0.162", features = ["derive"]}
 serde_json = { version = "1.0.96", optional = true}
 thiserror = "1.0.40"
+tinysegmenter = "0.1.1"
 tokio = { version = "1.28.0", features = ["full"]}
 tower-lsp = "0.19.0"
 tracing = "0.1.37"

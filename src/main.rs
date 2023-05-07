@@ -10,6 +10,8 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tower_lsp::async_trait;
 use tokio::main;
 
+mod wakachigaki;
+
 #[derive(Debug)]
 struct Backend {
     client: Client,
