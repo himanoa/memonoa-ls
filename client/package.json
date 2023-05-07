@@ -1,8 +1,26 @@
 {
+  "name": "memonoa-ls",
+  "version": "0.0.1",
+  "author": "himanoa",
+  "license": "MIT",
+  "engines": {
+    "vscode": "*"
+  },
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "private": true,
+  "main": "./dist/extension.js",
   "devDependencies": {
     "@types/node": "20.1.0",
     "@types/vscode": "1.78.0",
     "typescript": "5.0.4",
     "vscode-test": "1.6.1"
+  },
+  "dependencies": {
+    "vscode-languageclient": "8.1.0"
+  },
+  "scripts": {
+    "build": "tsc"
   }
 }
