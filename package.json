@@ -4,11 +4,41 @@
   "author": "himanoa",
   "license": "MIT",
   "engines": {
-    "vscode": "*"
+    "vscode": "^1.52.1"
   },
   "activationEvents": [
     "onLanguage:markdown"
   ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "markdown",
+        "extensions": [".md"]
+      }
+    ]
+  },
+    "configuration": {
+      "type": "object",
+      "title": "memonoa-ls",
+      "properties": {
+        "memonoa-language-server.trace.server": {
+          "type": "string",
+          "scope": "window",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "enumDescriptions": [
+            "No traces",
+            "Error only",
+            "Full log"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server."
+        }
+      }
+    },
   "private": true,
   "main": "./dist/extension.js",
   "devDependencies": {
@@ -21,6 +51,7 @@
     "vscode-languageclient": "8.1.0"
   },
   "scripts": {
-    "build": "tsc"
+    "prebuild": "rm -rf dist/*",
+    "build": "tsc -b"
   }
 }
