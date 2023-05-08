@@ -65,6 +65,13 @@ impl MemonoaWord {
             MemonoaWord::Normal { range, .. } => range
         }
     }
+
+    pub fn value(&self) -> &str {
+        match self {
+            MemonoaWord::Normal { value, ..} => value,
+            MemonoaWord::Link { value, .. } => value
+        }
+    }
 }
 
 impl MemonoaLine {
