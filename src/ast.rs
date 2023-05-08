@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use derive_more::{Constructor, Deref};
+use derive_more::Deref;
 
 use crate::{range::Range, wakachigaki::wakachigaki::Wakachigaki};
 
