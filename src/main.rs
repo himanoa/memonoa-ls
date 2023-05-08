@@ -11,8 +11,8 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing_subscriber::prelude::*;
 
 pub mod ast;
-mod wakachigaki;
 pub mod range;
+mod wakachigaki;
 
 #[derive(Debug)]
 struct Backend {
