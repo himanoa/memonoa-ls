@@ -2,13 +2,15 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use tokio::fs::read_dir;
+use ast::{MemonoaLine, TokenizeContext, MemonoaWord};
+use tokio::fs::{read_dir, read_to_string};
 use tokio::main;
 use tower_lsp::async_trait;
 use tower_lsp::jsonrpc::{Error, ErrorCode, Result};
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use tracing_subscriber::prelude::*;
+use wakachigaki::tiny_segmenter_wakachigaki::TinySegmentWakachigaki;
 
 pub mod ast;
 pub mod range;
@@ -58,7 +60,7 @@ impl LanguageServer for Backend {
                 .documents
                 .lock()
                 .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
-            if let Some(file_name) = entry.file_name().to_str() {
+            if let Some(file_name) = entry.path().file_stem().and_then(|s| s.to_str()) {
                 documents.insert(file_name.to_string(), entry.path());
             }
         }
@@ -106,11 +108,49 @@ impl LanguageServer for Backend {
         &self,
         params: GotoDefinitionParams,
     ) -> Result<Option<GotoDefinitionResponse>> {
-        self.client.log_message(MessageType::INFO, "hello").await;
         self.client
             .log_message(MessageType::INFO, format!("{:?}", params))
             .await;
-        Ok(None)
+        let file_path = params.text_document_position_params.text_document.uri.path();
+        let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+        let client = self.client.clone();
+        tokio::spawn(async move {
+            while let Some(msg) = rx.recv().await {
+                client.log_message(MessageType::INFO, msg).await;
+            }
+        });
+        tx.send("get file_path".to_string()).await;
+        self.client
+            .log_message(MessageType::INFO, "get file_path")
+            .await;
+        let file_body = match read_to_string(file_path).await {
+            Ok(body) => body,
+            Err(_) => { return Ok(None) }
+        };
+        let cursor_position = params.text_document_position_params.position.character;
+        let line_with_cursor = match file_body.lines().nth(params.text_document_position_params.position.line as usize) {
+            Some(line) => line,
+            None => { return Ok(None) }
+        };
+        let documents = match self.documents.try_lock() {
+            Ok(documents) => documents,
+            Err(_) => { return Ok(None) }
+        };
+        let tokenize_context = TokenizeContext::new(TinySegmentWakachigaki::new(), &documents);
+        let words = MemonoaLine::tokenize(tokenize_context, line_with_cursor.to_string());
+        tx.try_send(format!("{:?}", words.clone()));
+        tx.try_send(format!("position {}", cursor_position));
+        tx.try_send(format!("document {:?}", documents));
+        let go_to_file_path = match words.0.into_iter().find(|w| w.is_selected(cursor_position as usize)) {
+            Some(MemonoaWord::Link { path, .. }) => path,
+            _ => { return Ok(None) }
+        };
+        tx.try_send(format!("{:?}", go_to_file_path.clone()));
+        let u = Url::try_from(go_to_file_path);
+        tx.try_send(format!("{:?}", u.clone()));
+        Ok(Some(GotoDefinitionResponse::Scalar(Location::new(
+            u, Range::new(Position::new(0, 0), Position::new(0,0))
+        ))))
     }
 
     async fn initialized(&self, _: InitializedParams) {

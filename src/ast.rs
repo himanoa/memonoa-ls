@@ -21,10 +21,10 @@ impl<'a, W: Wakachigaki> TokenizeContext<'a, W> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Deref)]
 #[deref(forward)]
-pub struct MemonoaAst(Vec<MemonoaLine>);
+pub struct MemonoaAst(pub Vec<MemonoaLine>);
 #[derive(Debug, Clone, PartialEq, Eq, Deref)]
 #[deref(forward)]
-pub struct MemonoaLine(Vec<MemonoaWord>);
+pub struct MemonoaLine(pub Vec<MemonoaWord>);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MemonoaWord {
@@ -71,6 +71,11 @@ impl MemonoaWord {
             MemonoaWord::Normal { value, ..} => value,
             MemonoaWord::Link { value, .. } => value
         }
+    }
+
+    pub fn is_selected(&self, position: usize) -> bool {
+        let range = self.range();
+        range.start_character <= position && position <= range.end_character
     }
 }
 
@@ -148,5 +153,13 @@ mod tests {
                 MemonoaWord::Normal{value: "です".to_string(), range: Range::new(11, "です")},
             ]
         )
+    }
+
+    #[test]
+    fn memonoa_word_is_selected_test() {
+        let word = MemonoaWord::Normal { value: "Neovim".to_string(), range: Range::new(0, "Neovim") };
+        assert_eq!(word.is_selected(2), true);
+        assert_eq!(word.is_selected(7), false);
+        assert_eq!(word.is_selected(6), true);
     }
 }
