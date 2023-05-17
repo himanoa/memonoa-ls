@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use ast::{MemonoaLine, TokenizeContext, MemonoaWord};
-use tokio::fs::{read_dir, read_to_string};
+use tokio::fs::{read_dir, read_to_string, canonicalize};
 use tokio::main;
 use tower_lsp::async_trait;
 use tower_lsp::jsonrpc::{Error, ErrorCode, Result};
@@ -40,10 +40,6 @@ impl Backend {
 #[async_trait]
 impl LanguageServer for Backend {
     async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
-        self.client.log_message(MessageType::INFO, "hello").await;
-        self.client
-            .log_message(MessageType::INFO, "Start initialize")
-            .await;
         let mut entries = read_dir(".")
             .await
             .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
@@ -53,15 +49,13 @@ impl LanguageServer for Backend {
             .await
             .map_err(|_| Error::new(ErrorCode::ServerError(1)))?
         {
-            self.client
-                .log_message(MessageType::INFO, format!("{:?}", entry))
-                .await;
+            let abs_path = canonicalize(entry.path()).await.map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
             let mut documents = self
                 .documents
                 .lock()
                 .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
             if let Some(file_name) = entry.path().file_stem().and_then(|s| s.to_str()) {
-                documents.insert(file_name.to_string(), entry.path());
+                documents.insert(file_name.to_string(), abs_path);
             }
         }
 
@@ -146,10 +140,10 @@ impl LanguageServer for Backend {
             _ => { return Ok(None) }
         };
         tx.try_send(format!("{:?}", go_to_file_path.clone()));
-        let u = Url::try_from(go_to_file_path);
-        tx.try_send(format!("{:?}", u.clone()));
+        let url = Url::from_file_path(go_to_file_path).map_err(|_| Error::new(ErrorCode::InvalidParams))?;
+        tx.try_send(format!("{:?}", url.clone()));
         Ok(Some(GotoDefinitionResponse::Scalar(Location::new(
-            u, Range::new(Position::new(0, 0), Position::new(0,0))
+            url, Range::new(Position::new(0, 0), Position::new(0,0))
         ))))
     }
 
